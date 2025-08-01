@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import './SuiFlowSuccess.css';
+import { getApiUrl } from '../services/api.js';
 
 // Icons
 const CheckIcon = () => (
@@ -71,7 +72,7 @@ const SuiFlowSuccess = () => {
 
   const fetchTransactionDetails = async (paymentId) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/payments/${paymentId}`);
+      const response = await fetch(getApiUrl(`/api/payments/${paymentId}`));
       if (response.ok) {
         const data = await response.json();
         setTransactionData({

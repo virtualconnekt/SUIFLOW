@@ -7,6 +7,7 @@ import { SwapWidget } from '@flowx-finance/swap-widget';
 import "@mysten/dapp-kit/dist/index.css";
 import "@flowx-finance/swap-widget/index.esm.css";
 import './SuiFlowCheckout.css';
+import { getApiUrl } from '../services/api.js';
 
 
 const SuiIcon = () => (
@@ -109,7 +110,7 @@ const CheckoutContent = () => {
       }
       
       try {
-        const res = await fetch(`http://localhost:4000/api/products/${productId}`);
+        const res = await fetch(getApiUrl(`/api/products/${productId}`));
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
           throw new Error(errorData.message || 'Product not found');
@@ -144,7 +145,7 @@ const CheckoutContent = () => {
     async function fetchMerchantAddress() {
       if (!isWidgetPayment || !merchantId || !initialAmount) return;
       try {
-        const res = await fetch('http://localhost:4000/api/widget-payments/create', {
+        const res = await fetch(getApiUrl('/api/widget-payments/create'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ merchantId, amount: initialAmount })
@@ -240,7 +241,7 @@ const CheckoutContent = () => {
       
       if (isWidgetPayment) {
         // Widget payment flow
-        const createRes = await fetch('http://localhost:4000/api/widget-payments/create', {
+        const createRes = await fetch(getApiUrl('/api/widget-payments/create'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -262,7 +263,7 @@ const CheckoutContent = () => {
         
       } else {
         // Product payment flow
-        const paymentRes = await fetch('http://localhost:4000/api/payments/create', {
+        const paymentRes = await fetch(getApiUrl('/api/payments/create'), {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -327,8 +328,8 @@ const CheckoutContent = () => {
       
       // Use different verify endpoints based on payment type
       const verifyEndpoint = isWidgetPayment 
-        ? `http://localhost:4000/api/widget-payments/verify/${paymentId}`
-        : `http://localhost:4000/api/payments/verify/${paymentId}`;
+        ? getApiUrl(`/api/widget-payments/verify/${paymentId}`)
+        : getApiUrl(`/api/payments/verify/${paymentId}`);
       
       const verifyRes = await fetch(verifyEndpoint, {
         method: 'POST',

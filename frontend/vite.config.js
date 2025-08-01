@@ -1,34 +1,26 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  plugins: [
-    react(),
-    nodePolyfills({
-      // Whether to polyfill `node:` protocol imports.
-      protocolImports: true,
-      // Provide global Node.js builtin modules like 'process' and 'buffer'
-      globals: {
-        process: true,
-        Buffer: true,
-      },
-    }),
-  ],
-  server: {
-    port: 5173,
-    open: true,
-    proxy: {
-      '/api': 'http://localhost:4000'
-    }
-  },
+  plugins: [react()],
+  base: '/', // Set to your subdirectory if not root
   build: {
     outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom']
+        }
+      }
+    }
   },
-  resolve: {
-    alias: {
-      '@': '/src',
-    },
+  server: {
+    historyApiFallback: true,
   },
-});
+  preview: {
+    historyApiFallback: true,
+  }
+})
 

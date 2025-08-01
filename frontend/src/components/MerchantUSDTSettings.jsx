@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './MerchantUSDTSettings.css';
+import { getApiUrl } from '../services/api.js';
 
 const MerchantUSDTSettings = ({ merchantId }) => {
   const [settings, setSettings] = useState(null);
@@ -25,7 +26,7 @@ const MerchantUSDTSettings = ({ merchantId }) => {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:4000/api/payments/merchant-settings/${merchantId}`);
+      const response = await fetch(getApiUrl(`/api/payments/merchant-settings/${merchantId}`));
       if (response.ok) {
         const data = await response.json();
         setSettings(data.settings);
@@ -42,7 +43,7 @@ const MerchantUSDTSettings = ({ merchantId }) => {
 
   const fetchLivePrices = async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/payments/live-prices?merchantId=${merchantId}`);
+      const response = await fetch(getApiUrl(`/api/payments/live-prices?merchantId=${merchantId}`));
       if (response.ok) {
         const data = await response.json();
         setLivePrices(data.prices);
@@ -63,7 +64,7 @@ const MerchantUSDTSettings = ({ merchantId }) => {
     setSuccess('');
 
     try {
-      const response = await fetch(`http://localhost:4000/api/payments/merchant-settings/${merchantId}/usdt-rate`, {
+      const response = await fetch(getApiUrl(`/api/payments/merchant-settings/${merchantId}/usdt-rate`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

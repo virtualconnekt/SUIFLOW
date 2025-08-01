@@ -1,9 +1,9 @@
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://suiflow-8zsg.onrender.com";
 
 class AuthService {
   // Send OTP to email for registration
   async sendRegistrationOTP(email) {
-    const response = await fetch(`${API_BASE_URL}/auth/send-otp`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -22,7 +22,7 @@ class AuthService {
 
   // Verify OTP and complete registration
   async verifyOTPAndRegister(email, otp, password, businessName, walletAddress, webhookUrl) {
-    const response = await fetch(`${API_BASE_URL}/auth/verify-otp-register`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp-register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ class AuthService {
 
   // Login
   async login(email, password) {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ class AuthService {
 
   // Resend OTP
   async resendOTP(email) {
-    const response = await fetch(`${API_BASE_URL}/auth/resend-otp`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/resend-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ class AuthService {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

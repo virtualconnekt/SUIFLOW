@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
 import img01 from "../res/logo2.png";
 import { FaRegUserCircle } from "react-icons/fa";
+import { getApiUrl } from '../services/api.js';
 import "./SuiFlowDashboard.css";
 console.log("SuiFlowDashboard component loaded");
 
@@ -207,7 +208,7 @@ const SuiFlowDashboard = () => {
   async function fetchProducts() {
     try {
       const token = authService.getToken();
-      const res = await fetch("http://localhost:4000/api/products", {
+      const res = await fetch(getApiUrl("/api/products"), {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -229,7 +230,7 @@ const SuiFlowDashboard = () => {
         token ? "Token exists" : "No token"
       );
 
-      const res = await fetch("http://localhost:4000/api/payments", {
+      const res = await fetch(getApiUrl("/api/payments"), {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -278,7 +279,7 @@ const SuiFlowDashboard = () => {
         return;
       }
 
-      const res = await fetch("http://localhost:4000/api/products", {
+      const res = await fetch(getApiUrl("/api/products"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -314,7 +315,7 @@ const SuiFlowDashboard = () => {
       return;
     try {
       const token = authService.getToken();
-      await fetch(`http://localhost:4000/api/products/${id}`, {
+      await fetch(getApiUrl(`/api/products/${id}`), {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
