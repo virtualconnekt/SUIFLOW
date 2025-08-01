@@ -48,19 +48,51 @@ export const getProductById = async (req, res) => {
 
 export const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    // Get products only for the authenticated merchant
+    const merchantId = req.merchant._id;
+    const merchantWalletAddress = req.merchant.walletAddress;
+    
+    // Filter by both merchantAddress (wallet) and potentially merchantId for flexibility
+    const products = await Product.find({ 
+      $or: [
+        { merchantAddress: merchantWalletAddress },
+        { merchantId: merchantId }
+      ]
+    });
+    
+    console.log(`Fetching products for merchant ${merchantId} (${merchantWalletAddress}):`, products.length, 'products found');
     res.status(200).json(products);
   } catch (error) {
+    console.error('Error fetching products:', error);
     res.status(500).json({ message: 'Error fetching products', error: error.message });
   }
 };
 
 export const deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-    res.status(200).json({ message: 'Product deleted' });
+    const merchantId = req.merchant._id;
+    const merchantWalletAddress = req.merchant.walletAddress;
+    
+    // Find product and verify it belongs to the authenticated merchant
+    const product = await Product.findOne({ 
+      _id: req.params.id, 
+      $or: [
+        { merchantAddress: merchantWalletAddress },
+        { merchantId: merchantId }
+      ]
+    });
+    
+    if (!product) {
+      return res.status(404).json({ 
+        message: 'Product not found or you do not have permission to delete it' 
+      });
+    }
+    
+    await Product.findByIdAndDelete(req.params.id);
+    console.log(`Product ${req.params.id} deleted by merchant ${merchantId}`);
+    res.status(200).json({ message: 'Product deleted successfully' });
   } catch (error) {
+    console.error('Error deleting product:', error);
     res.status(500).json({ message: 'Error deleting product', error: error.message });
   }
 }; 
