@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5000';
+// Centralized API base URL for frontend
+const API_BASE_URL = 
+  import.meta.env.VITE_API_BASE_URL || "https://suiflow-8zsg.onrender.com";
 
 export const submitPayment = async (paymentData) => {
     try {
@@ -19,3 +21,5 @@ export const getPaymentStatus = async (paymentId) => {
         throw new Error('Error retrieving payment status: ' + error.message);
     }
 };
+
+export default API_BASE_URL;

@@ -130,14 +130,14 @@ const Registration = ({ onRegistrationSuccess, onSwitchToLogin }) => {
             <div className="form-group">
               <label htmlFor="email">Email Address</label>
               <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Enter your email address"
-                required
-                disabled={loading}
+          type="email"
+          id="email"
+          name="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          placeholder="Enter your email address"
+          required
+          disabled={loading}
               />
             </div>
 
@@ -148,7 +148,7 @@ const Registration = ({ onRegistrationSuccess, onSwitchToLogin }) => {
             <p className="switch-auth">
               Already have an account? 
               <button type="button" onClick={onSwitchToLogin} className="btn-link">
-                Sign In
+          Sign In
               </button>
             </p>
           </form>
