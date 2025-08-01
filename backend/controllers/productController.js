@@ -24,7 +24,7 @@ export const createProduct = async (req, res) => {
     
     await product.save();
     
-    const frontendBaseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
+    const frontendBaseUrl = process.env.FRONTEND_BASE_URL || 'https://suiflow.virtualconnekt.com.ng';
     product.paymentLink = `${frontendBaseUrl}/pay/${product._id}`;
     await product.save();
     
