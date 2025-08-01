@@ -74,10 +74,11 @@ const CheckoutContent = () => {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [customerEmail, setCustomerEmail] = useState('');
   const [emailValidated, setEmailValidated] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState('NGN');
-  const [exchangeRate, setExchangeRate] = useState(1500);
-  const [convertedAmount, setConvertedAmount] = useState(null);
-  const [currencyLoading, setCurrencyLoading] = useState(false);
+  // Remove currency selection and exchange rate
+  // const [selectedCurrency, setSelectedCurrency] = useState('NGN');
+  // const [exchangeRate, setExchangeRate] = useState(1500);
+  // const [convertedAmount, setConvertedAmount] = useState(null);
+  // const [currencyLoading, setCurrencyLoading] = useState(false);
   const [showFlowXWidget, setShowFlowXWidget] = useState(false);
   
   // Widget-specific state
@@ -91,7 +92,6 @@ const CheckoutContent = () => {
       
       if (isWidgetPayment) {
         // For widget payments, create a mock product object
-        console.log('Setting up widget payment for merchant:', merchantId);
         setProduct({
           name: `Payment to ${merchantId}`,
           description: 'Widget Payment',
@@ -108,45 +108,36 @@ const CheckoutContent = () => {
         return;
       }
       
-      console.log('Fetching product with ID:', productId);
-      
       try {
         const res = await fetch(`http://localhost:4000/api/products/${productId}`);
-        console.log('Product fetch response:', res.status, res.ok);
-        
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
-          console.error('Product fetch error:', errorData);
           throw new Error(errorData.message || 'Product not found');
         }
-        
         const productData = await res.json();
-        console.log('Product data received:', productData);
         setProduct(productData);
       } catch (e) {
-        console.error('Product fetch failed:', e);
         setError('Failed to load product: ' + e.message);
       }
     }
     fetchProductOrSetupWidget();
   }, [productId, merchantId, initialAmount, isWidgetPayment]);
 
-  // Fetch exchange rate on component mount
-  useEffect(() => {
-    async function fetchExchangeRate() {
-      try {
-        const response = await fetch('http://localhost:4000/api/payments/exchange-rate');
-        if (response.ok) {
-          const data = await response.json();
-          setExchangeRate(data.exchangeRate);
-        }
-      } catch (error) {
-        console.error('Failed to fetch exchange rate:', error);
-        // Use default rate if fetch fails
-      }
-    }
-    fetchExchangeRate();
-  }, []);
+  // Remove exchange rate fetching
+  // useEffect(() => {
+  //   async function fetchExchangeRate() {
+  //     try {
+  //       const response = await fetch('http://localhost:4000/api/payments/exchange-rate');
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         setExchangeRate(data.exchangeRate);
+  //       }
+  //     } catch (error) {
+  //       // Use default rate if fetch fails
+  //     }
+  //   }
+  //   fetchExchangeRate();
+  // }, []);
 
   // Fetch merchant address for widget payments
   useEffect(() => {
@@ -171,82 +162,25 @@ const CheckoutContent = () => {
     fetchMerchantAddress();
   }, [isWidgetPayment, merchantId, initialAmount]);
 
-  // Convert amount when currency selection changes
-  useEffect(() => {
-    const priceToConvert = isWidgetPayment ? widgetAmount : (product?.priceInSui);
-    if (priceToConvert) {
-      convertCurrency(priceToConvert, 'SUI', selectedCurrency);
-    }
-  }, [selectedCurrency, product, exchangeRate, isWidgetPayment, widgetAmount]);
+  // Remove currency conversion logic
+  // useEffect(() => {
+  //   const priceToConvert = isWidgetPayment ? widgetAmount : (product?.priceInSui);
+  //   if (priceToConvert) {
+  //     convertCurrency(priceToConvert, 'SUI', selectedCurrency);
+  //   }
+  // }, [selectedCurrency, product, exchangeRate, isWidgetPayment, widgetAmount]);
 
-  const convertCurrency = async (amount, fromCurrency, toCurrency) => {
-    if (fromCurrency === toCurrency) {
-      setConvertedAmount(amount);
-      return;
-    }
+  // Remove convertCurrency function
 
-    setCurrencyLoading(true);
-    try {
-      const response = await fetch('http://localhost:4000/api/payments/convert-currency', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount,
-          fromCurrency,
-          toCurrency
-        })
-      });
+  // Remove handleCurrencyChange and formatCurrency functions
 
-      if (response.ok) {
-        const data = await response.json();
-        setConvertedAmount(data.conversion.converted.amount);
-      } else {
-        throw new Error('Currency conversion failed');
-      }
-    } catch (error) {
-      console.error('Currency conversion error:', error);
-      // Fallback calculation
-      if (fromCurrency === 'SUI' && toCurrency === 'NGN') {
-        setConvertedAmount(amount * exchangeRate);
-      } else if (fromCurrency === 'NGN' && toCurrency === 'SUI') {
-        setConvertedAmount(amount / exchangeRate);
-      }
-    } finally {
-      setCurrencyLoading(false);
-    }
-  };
-
-  const handleCurrencyChange = (currency) => {
-    setSelectedCurrency(currency);
-  };
-
-  const formatCurrency = (amount, currency) => {
-    if (currency === 'NGN') {
-      return `₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    } else if (currency === 'SUI') {
-      return `${amount.toFixed(6)} SUI`;
-    }
-    return `${amount} ${currency}`;
-  };
-
+  // Update getDisplayAmount to only show SUI
   const getDisplayAmount = () => {
     if (isWidgetPayment) {
-      if (selectedCurrency === 'SUI') {
-        return formatCurrency(widgetAmount, 'SUI');
-      } else {
-        return convertedAmount ? formatCurrency(convertedAmount, 'NGN') : 'Converting...';
-      }
+      return `${widgetAmount} SUI`;
     }
-    
     if (!product) return '';
-    
-    if (selectedCurrency === 'SUI') {
-      return formatCurrency(product.priceInSui, 'SUI');
-    } else {
-      return convertedAmount ? formatCurrency(convertedAmount, 'NGN') : 'Converting...';
-    }
+    return `${product.priceInSui} SUI`;
   };
 
   const getActualPaymentAmount = () => {
@@ -509,8 +443,8 @@ const CheckoutContent = () => {
             <h2>{isWidgetPayment ? 'Widget Payment' : product.name}</h2>
             <p>{isWidgetPayment ? `Payment to ${merchantId || 'merchant'}` : product.description}</p>
             
-            {/* Currency Selection */}
-            <div className="sui-currency-selector">
+            {/* Remove Currency Selection */}
+            {/* <div className="sui-currency-selector">
               <label className="sui-currency-label">Display Price In:</label>
               <div className="sui-currency-options">
                 <button
@@ -528,31 +462,13 @@ const CheckoutContent = () => {
                   SUI
                 </button>
               </div>
-            </div>
+            </div> */}
             
             <div className="sui-product-price">
               <div className="sui-price-display">
-                {currencyLoading ? (
-                  <div className="sui-price-loading">
-                    <div className="sui-loading-spinner small"></div>
-                    <span>Converting...</span>
-                  </div>
-                ) : (
-                  <>
-                    <span className="sui-price-amount">{getDisplayAmount()}</span>
-                    {selectedCurrency === 'NGN' && (
-                      <div className="sui-price-conversion">
-                        ≈ {formatCurrency(getActualPaymentAmount(), 'SUI')}
-                      </div>
-                    )}
-                  </>
-                )}
+                <span className="sui-price-amount">{getDisplayAmount()}</span>
               </div>
-              
-              {/* Exchange Rate Info */}
-              <div className="sui-exchange-rate-info">
-                <small>1 SUI = ₦{typeof exchangeRate === 'number' ? exchangeRate.toLocaleString() : 'N/A'}</small>
-              </div>
+              {/* Remove Exchange Rate Info */}
             </div>
           </div>
         </div>
@@ -755,4 +671,4 @@ const SuiFlowCheckout = () => {
   );
 };
 
-export default SuiFlowCheckout; 
+export default SuiFlowCheckout;

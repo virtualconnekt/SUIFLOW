@@ -115,223 +115,6 @@ const SwapIcon = () => (
   </svg>
 );
 
-// USDT Rate Settings Component
-const USDTRateSettings = ({ merchantId }) => {
-  const [usdtRate, setUsdtRate] = useState("");
-  const [currentRate, setCurrentRate] = useState(null);
-  const [livePrice, setLivePrice] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
-  useEffect(() => {
-    fetchCurrentSettings();
-    fetchLivePrice();
-
-    // Auto-refresh live price every 30 seconds
-    const interval = setInterval(fetchLivePrice, 30000);
-    return () => clearInterval(interval);
-  }, [merchantId]);
-
-  const fetchCurrentSettings = async () => {
-    try {
-      const response = await fetch(
-        `/api/payments/merchant-settings/${merchantId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authService.getToken()}`,
-          },
-        }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        const rate = data.settings?.usdtToNgnRate || data.usdtToNgnRate || 1550;
-        setCurrentRate(rate);
-        setUsdtRate(rate.toString());
-      }
-    } catch (err) {
-      console.error("Error fetching settings:", err);
-    }
-  };
-
-  const fetchLivePrice = async () => {
-    try {
-      const response = await fetch("/api/payments/live-prices");
-      if (response.ok) {
-        const data = await response.json();
-        setLivePrice(data);
-      }
-    } catch (err) {
-      console.error("Error fetching live price:", err);
-    }
-  };
-
-  const handleUpdateRate = async () => {
-    if (!usdtRate || parseFloat(usdtRate) <= 0) {
-      setError("Please enter a valid USDT rate");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-    setSuccess("");
-
-    try {
-      const response = await fetch(
-        `/api/payments/merchant-settings/${merchantId}/usdt-rate`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authService.getToken()}`,
-          },
-          body: JSON.stringify({
-            usdtRate: parseFloat(usdtRate),
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const newRate =
-          data.settings?.usdtToNgnRate ||
-          data.newRate?.rate ||
-          parseFloat(usdtRate);
-        setCurrentRate(newRate);
-        setSuccess("USDT rate updated successfully!");
-        setTimeout(() => setSuccess(""), 3000);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || "Failed to update USDT rate");
-      }
-    } catch (err) {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateExampleConversion = () => {
-    if (!livePrice || !currentRate) return null;
-
-    const exampleNGN = 10000;
-    const usdtAmount = exampleNGN / currentRate;
-    const suiAmount = usdtAmount / livePrice.currentPrice;
-
-    return {
-      ngn: exampleNGN,
-      usdt: usdtAmount.toFixed(4),
-      sui: suiAmount.toFixed(6),
-    };
-  };
-
-  const example = calculateExampleConversion();
-
-  return (
-    <div className="sui-setting-card">
-      <h4>💱 USDT to Naira Exchange Rate</h4>
-
-      {livePrice && (
-        <div
-          className="sui-live-price-info"
-          style={{
-            marginBottom: "20px",
-            padding: "15px",
-            backgroundColor: "#f8f9fa",
-            borderRadius: "8px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "10px",
-            }}
-          >
-            <strong>🔴 Live SUI Price</strong>
-            <span
-              style={{
-                color:
-                  livePrice.priceChangePercent24h >= 0 ? "#10b981" : "#ef4444",
-              }}
-            >
-              ${livePrice.currentPrice?.toFixed(4)} USDT (
-              {livePrice.priceChangePercent24h >= 0 ? "+" : ""}
-              {livePrice.priceChangePercent24h?.toFixed(2)}%)
-            </span>
-          </div>
-          <div style={{ fontSize: "12px", color: "#666" }}>
-            Last updated: {new Date(livePrice.lastUpdated).toLocaleTimeString()}
-          </div>
-        </div>
-      )}
-
-      <div className="sui-form-group">
-        <label>Current USDT Rate (1 USDT = ? NGN)</label>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <input
-            type="number"
-            value={usdtRate}
-            onChange={(e) => setUsdtRate(e.target.value)}
-            placeholder="e.g., 1550"
-            className="sui-input"
-            step="0.01"
-            min="0"
-          />
-          <button
-            onClick={handleUpdateRate}
-            disabled={loading}
-            className="sui-button sui-button-primary"
-            style={{ minWidth: "100px" }}
-          >
-            {loading ? "Updating..." : "Update"}
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div style={{ color: "#ef4444", fontSize: "14px", marginTop: "10px" }}>
-          ❌ {error}
-        </div>
-      )}
-
-      {success && (
-        <div style={{ color: "#10b981", fontSize: "14px", marginTop: "10px" }}>
-          ✅ {success}
-        </div>
-      )}
-
-      {currentRate && (
-        <div
-          style={{
-            marginTop: "15px",
-            padding: "15px",
-            backgroundColor: "#090d11ff",
-            borderRadius: "8px",
-          }}
-        >
-          <strong>Current Rate:</strong> 1 USDT = ₦
-          {currentRate.toLocaleString()}
-          <br />
-          {example && (
-            <div style={{ marginTop: "10px", fontSize: "14px" }}>
-              <strong>Example Conversion:</strong>
-              <br />₦{example.ngn.toLocaleString()} → ${example.usdt} USDT →{" "}
-              {example.sui} SUI
-            </div>
-          )}
-        </div>
-      )}
-
-      <div style={{ marginTop: "15px", fontSize: "12px", color: "#666" }}>
-        💡 This rate determines how Nigerian Naira is converted to USDT before
-        being converted to SUI using live market prices.
-      </div>
-    </div>
-  );
-};
-
 const WidgetIcon = () => (
   <svg
     width="24"
@@ -341,11 +124,8 @@ const WidgetIcon = () => (
     stroke="currentColor"
     strokeWidth="2"
   >
-    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-    <rect x="7" y="7" width="3" height="3"></rect>
-    <rect x="14" y="7" width="3" height="3"></rect>
-    <rect x="7" y="14" width="3" height="3"></rect>
-    <rect x="14" y="14" width="3" height="3"></rect>
+    <rect x="4" y="4" width="16" height="16" rx="4"></rect>
+    <circle cx="12" cy="12" r="3"></circle>
   </svg>
 );
 
@@ -645,7 +425,7 @@ const SuiFlowDashboard = () => {
             className={`sui-nav-item ${
               activeTab === "flowx" ? "active" : ""
             }`}
-            onClick={() => window.location.href = "/flowx"}
+            onClick={() => {window.location.href = "/flowx"}}
           >
             <SwapIcon />
             <span>FlowX Swap</span>
@@ -1036,80 +816,80 @@ const SuiFlowDashboard = () => {
                         navigator.clipboard.writeText(jsCode);
                         setCopied(true);
                         setTimeout(() => setCopied(false), 1500);
-                      }}
-                    >
-                      {copied ? "Copied!" : "Copy"}
-                    </button>
-                  </div>
-                </div>
-              </div>
+                        }}
+                      >
+                        {copied ? "Copied!" : "Copy"}
+                      </button>
+                      </div>
+                    </div>
+                    </div>
 
-              <div className="sui-widget-info">
-                <h4>Widget Features</h4>
-                <ul className="sui-feature-list">
-                  <li>✅ Customizable payment amounts</li>
-                  <li>✅ Secure wallet integration</li>
-                  <li>✅ Real-time blockchain verification</li>
-                  <li>✅ Mobile-responsive design</li>
-                  <li>✅ Easy integration with any website</li>
-                  <li>✅ Automatic transaction tracking</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "transactions" && (
-            <div className="sui-transactions-section">
-              <div className="sui-transactions-header">
-                <h3>Transaction History</h3>
-                <div className="sui-transactions-stats">
-                  <div className="sui-stat-item">
-                    <span className="sui-stat-label">Total Transactions</span>
-                    <span className="sui-stat-value">{payments.length}</span>
+                    <div className="sui-widget-info">
+                    <h4>Widget Features</h4>
+                    <ul className="sui-feature-list">
+                      <li>✅ Customizable payment amounts</li>
+                      <li>✅ Secure wallet integration</li>
+                      <li>✅ Real-time blockchain verification</li>
+                      <li>✅ Mobile-responsive design</li>
+                      <li>✅ Easy integration with any website</li>
+                      <li>✅ Automatic transaction tracking</li>
+                    </ul>
+                    </div>
                   </div>
-                  <div className="sui-stat-item">
-                    <span className="sui-stat-label">Successful</span>
-                    <span className="sui-stat-value success">
-                      {
+                  )}
+
+                  {activeTab === "transactions" && (
+                  <div className="sui-transactions-section">
+                    <div className="sui-transactions-header">
+                    <h3>Transaction History</h3>
+                    <div className="sui-transactions-stats">
+                      <div className="sui-stat-item">
+                      <span className="sui-stat-label">Total Transactions</span>
+                      <span className="sui-stat-value">{payments.length}</span>
+                      </div>
+                      <div className="sui-stat-item">
+                      <span className="sui-stat-label">Successful</span>
+                      <span className="sui-stat-value success">
+                        {
                         payments.filter(
                           (p) => p.status === "completed" || p.status === "paid"
                         ).length
-                      }
-                    </span>
-                  </div>
-                  <div className="sui-stat-item">
-                    <span className="sui-stat-label">Pending</span>
-                    <span className="sui-stat-value pending">
-                      {payments.filter((p) => p.status === "pending").length}
-                    </span>
-                  </div>
-                  <div className="sui-stat-item">
-                    <span className="sui-stat-label">Failed</span>
-                    <span className="sui-stat-value failed">
-                      {payments.filter((p) => p.status === "failed").length}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                        }
+                      </span>
+                      </div>
+                      <div className="sui-stat-item">
+                      <span className="sui-stat-label">Pending</span>
+                      <span className="sui-stat-value pending">
+                        {payments.filter((p) => p.status === "pending").length}
+                      </span>
+                      </div>
+                      <div className="sui-stat-item">
+                      <span className="sui-stat-label">Failed</span>
+                      <span className="sui-stat-value failed">
+                        {payments.filter((p) => p.status === "failed").length}
+                      </span>
+                      </div>
+                    </div>
+                    </div>
 
-              <div className="sui-transactions-list">
-                {payments.length === 0 ? (
-                  <div className="sui-empty-state">
-                    <div className="sui-empty-icon">📊</div>
-                    <h4>No Transactions Yet</h4>
-                    <p>
-                      Your transaction history will appear here once you receive
-                      payments.
-                    </p>
-                  </div>
-                ) : (
-                  payments.map((payment) => (
-                    <div key={payment._id} className="sui-transaction-card">
-                      <div className="sui-transaction-header">
+                    <div className="sui-transactions-list">
+                    {payments.length === 0 ? (
+                      <div className="sui-empty-state">
+                      <div className="sui-empty-icon">📊</div>
+                      <h4>No Transactions Yet</h4>
+                      <p>
+                        Your transaction history will appear here once you receive
+                        payments.
+                      </p>
+                      </div>
+                    ) : (
+                      payments.map((payment) => (
+                      <div key={payment._id} className="sui-transaction-card">
+                        <div className="sui-transaction-header">
                         <div className="sui-transaction-info">
                           <h4>{payment.product?.name || "Unknown Product"}</h4>
                           <span className="sui-transaction-id">
-                            #{payment._id.slice(-8)}
+                          #{payment._id.slice(-8)}
                           </span>
                         </div>
                         <div
@@ -1117,168 +897,161 @@ const SuiFlowDashboard = () => {
                         >
                           {payment.status === "completed" ||
                           payment.status === "paid"
-                            ? "✅ Completed"
-                            : payment.status === "pending"
-                            ? "⏳ Pending"
-                            : payment.status === "failed"
-                            ? "❌ Failed"
-                            : payment.status}
+                          ? "✅ Completed"
+                          : payment.status === "pending"
+                          ? "⏳ Pending"
+                          : payment.status === "failed"
+                          ? "❌ Failed"
+                          : payment.status}
                         </div>
-                      </div>
+                        </div>
 
-                      <div className="sui-transaction-details">
+                        <div className="sui-transaction-details">
                         <div className="sui-transaction-row">
                           <span className="sui-transaction-label">Amount:</span>
                           <span className="sui-transaction-value">
-                            {parseFloat(
-                              payment.amountInSui || payment.amount
-                            ).toFixed(4)}{" "}
-                            SUI
+                          {parseFloat(
+                            payment.amountInSui || payment.amount
+                          ).toFixed(4)}{" "}
+                          SUI
                           </span>
                         </div>
 
                         {payment.txnHash && (
                           <div className="sui-transaction-row">
-                            <span className="sui-transaction-label">
-                              Transaction Hash:
-                            </span>
-                            <span className="sui-transaction-value sui-hash">
-                              {payment.txnHash.slice(0, 8)}...
-                              {payment.txnHash.slice(-8)}
-                            </span>
+                          <span className="sui-transaction-label">
+                            Transaction Hash:
+                          </span>
+                          <span className="sui-transaction-value sui-hash">
+                            {payment.txnHash.slice(0, 8)}...
+                            {payment.txnHash.slice(-8)}
+                          </span>
                           </div>
                         )}
 
                         {payment.customerWallet && (
                           <div className="sui-transaction-row">
-                            <span className="sui-transaction-label">
-                              Customer Wallet:
-                            </span>
-                            <span className="sui-transaction-value sui-hash">
-                              {payment.customerWallet.slice(0, 8)}...
-                              {payment.customerWallet.slice(-8)}
-                            </span>
+                          <span className="sui-transaction-label">
+                            Customer Wallet:
+                          </span>
+                          <span className="sui-transaction-value sui-hash">
+                            {payment.customerWallet.slice(0, 8)}...
+                            {payment.customerWallet.slice(-8)}
+                          </span>
                           </div>
                         )}
 
                         <div className="sui-transaction-row">
                           <span className="sui-transaction-label">Date:</span>
                           <span className="sui-transaction-value">
-                            {formatDate(payment.createdAt)}
+                          {formatDate(payment.createdAt)}
                           </span>
                         </div>
 
                         {payment.paidAt && (
                           <div className="sui-transaction-row">
-                            <span className="sui-transaction-label">
-                              Paid At:
-                            </span>
-                            <span className="sui-transaction-value">
-                              {formatDate(payment.paidAt)}
-                            </span>
+                          <span className="sui-transaction-label">
+                            Paid At:
+                          </span>
+                          <span className="sui-transaction-value">
+                            {formatDate(payment.paidAt)}
+                          </span>
                           </div>
                         )}
-                      </div>
+                        </div>
 
-                      {payment.description && (
+                        {payment.description && (
                         <div className="sui-transaction-description">
                           <span className="sui-transaction-label">
-                            Description:
+                          Description:
                           </span>
                           <p>{payment.description}</p>
                         </div>
-                      )}
+                        )}
+                      </div>
+                      ))
+                    )}
                     </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+                  </div>
+                  )}
 
-          {activeTab === "webhooks" && (
-            <div className="sui-webhooks-section">
-              <h3>Webhook Configuration</h3>
-              <p>
-                Configure webhooks to receive real-time payment notifications.
-              </p>
-              <div className="sui-webhook-config">
-                <div className="sui-form-group">
-                  <label>Webhook URL</label>
-                  <input
-                    type="url"
-                    placeholder="https://your-domain.com/webhook"
-                    className="sui-input"
-                  />
-                </div>
-                <div className="sui-form-group">
-                  <label>Secret Key</label>
-                  <input
-                    type="text"
-                    placeholder="Your webhook secret"
-                    className="sui-input"
-                  />
-                </div>
-                <button className="sui-button sui-button-primary">
-                  Save Webhook
-                </button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "settings" && (
-            <div className="sui-settings-section">
-              <h3>Account Settings</h3>
-              <div className="sui-settings-grid">
-                <div className="sui-setting-card">
-                  <h4>Business Information</h4>
-                  <div className="sui-form-group">
-                    <label>Business Name</label>
-                    <input
+                  {activeTab === "webhooks" && (
+                  <div className="sui-webhooks-section">
+                    <h3>Webhook Configuration</h3>
+                    <p>
+                    Configure webhooks to receive real-time payment notifications.
+                    </p>
+                    <div className="sui-webhook-config">
+                    <div className="sui-form-group">
+                      <label>Webhook URL</label>
+                      <input
+                      type="url"
+                      placeholder="https://your-domain.com/webhook"
+                      className="sui-input"
+                      />
+                    </div>
+                    <div className="sui-form-group">
+                      <label>Secret Key</label>
+                      <input
                       type="text"
-                      value={merchant.businessName || ""}
+                      placeholder="Your webhook secret"
                       className="sui-input"
-                      readOnly
-                    />
-                  </div>
-                  <div className="sui-form-group">
-                    <label>Email</label>
-                    <input
-                      type="email"
-                      value={merchant.email || ""}
-                      className="sui-input"
-                      readOnly
-                    />
-                  </div>
-                  <div className="sui-form-group">
-                    <label>Merchant ID</label>
-                    <input
-                      type="text"
-                      value={
-                        merchant._id
-                          ? merchant._id.length > 12
-                            ? merchant._id.slice(0, 6) + "..." + merchant._id.slice(-6)
-                            : merchant._id
-                          : ""
-                      }
-                      className="sui-input"
-                      readOnly
-                    />
-                  </div>
-                </div>
-
-                <div className="sui-setting-card">
-                  <h4>Wallet Address</h4>
-                  <div className="sui-wallet-display">
-                    <span className="sui-wallet-address">
-                      {merchant.walletAddress}
-                    </span>
-                    <button className="sui-button sui-button-secondary">
-                      Copy
+                      />
+                    </div>
+                    <button className="sui-button sui-button-primary">
+                      Save Webhook
                     </button>
+                    </div>
                   </div>
-                </div>
+                  )}
 
-                <USDTRateSettings merchantId={merchant._id} />
+                  {activeTab === "settings" && (
+                  <div className="sui-settings-section">
+                    <h3>Account Settings</h3>
+                    <div className="sui-settings-grid">
+                    <div className="sui-setting-card">
+                      <h4>Business Information</h4>
+                      <div className="sui-form-group">
+                      <label>Business Name</label>
+                      <input
+                        type="text"
+                        value={merchant.businessName || ""}
+                        className="sui-input"
+                        readOnly
+                      />
+                      </div>
+                      <div className="sui-form-group">
+                      <label>Email</label>
+                      <input
+                        type="email"
+                        value={merchant.email || ""}
+                        className="sui-input"
+                        readOnly
+                      />
+                      </div>
+                      <div className="sui-form-group">
+                      <label>Merchant ID</label>
+                      <input
+                        type="text"
+                        value={merchant._id || ""}
+                        className="sui-input"
+                        readOnly
+                      />
+                      </div>
+                    </div>
+
+                    <div className="sui-setting-card">
+                      <h4>Wallet Address</h4>
+                      <div className="sui-wallet-display">
+                      <span className="sui-wallet-address">
+                        {merchant.walletAddress}
+                      </span>
+                      <button className="sui-button sui-button-secondary">
+                        Copy
+                      </button>
+                      </div>
+                    </div>
+                    {/* Removed USDTRateSettings and any naira conversion info */}
               </div>
             </div>
           )}
